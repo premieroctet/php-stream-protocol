@@ -50,6 +50,74 @@ public function chat(Request $request): Response
 }
 ```
 
+### Symfony Usage
+
+```php
+<?php
+
+namespace App\Controller;
+
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\Request;
+use PremierOctet\PhpStreamProtocol\StreamProtocol;
+use App\Tools\WeatherTool;
+use OpenAI;
+
+
+class ChatController extends AbstractController
+{
+    private StreamProtocol $streamProtocol;
+
+    public function __construct()
+    {
+        $this->streamProtocol = StreamProtocol::create()
+            ->withSystemPrompt('You are a demo assistant showcasing the integration of Vercel AI SDK with a Symfony controller.')
+            ->registerTool('get_current_weather', [WeatherTool::class, 'getCurrentWeather']);
+    }
+
+    #[Route('/api/chat', name: 'api_chat', methods: ['POST'])]
+    public function chat(Request $request): Response
+    {
+        $protocol = $request->query->get('protocol', 'data');
+
+        try {
+            // Use the StreamProtocol to handle the entire request in one line!
+            $response = $this->streamProtocol->handleRequest(
+                $request->getContent(),
+                function(array $openaiMessages) {
+                    $client = OpenAI::client($_ENV['OPENAI_API_KEY']);
+                    return $client->chat()->createStreamed([
+                        'model' => 'gpt-4',
+                        'messages' => $openaiMessages,
+                        'stream' => true,
+                        'tools' => [WeatherTool::getToolDefinition()],
+                    ]);
+                },
+                $protocol
+            );
+
+            // Disable web profiler for streaming responses
+            $response->headers->set('X-Debug-Token-Link', '');
+            $response->headers->set('X-Debug-Token', '');
+
+            return $response;
+
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    #[Route('/chat', name: 'chat')]
+    public function chatPage(): Response
+    {
+        return $this->render('chat.html.twig');
+    }
+}
+
+```
+
 ### Advanced Usage with Custom Tools
 
 ```php
