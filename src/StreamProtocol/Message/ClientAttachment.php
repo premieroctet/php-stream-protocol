@@ -1,6 +1,6 @@
 <?php
 
-namespace App\StreamProtocol\Message;
+namespace PremierOctet\StreamProtocol\Message;
 
 /**
  * ClientAttachment - Represents a file attachment in a message

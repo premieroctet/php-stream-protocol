@@ -1,8 +1,8 @@
 <?php
 
-namespace App\StreamProtocol;
+namespace PremierOctet\StreamProtocol;
 
-use App\StreamProtocol\Message\ClientMessage;
+use PremierOctet\StreamProtocol\Message\ClientMessage;
 
 /**
  * MessageConverter - Converts messages between different formats
