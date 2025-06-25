@@ -1,6 +1,6 @@
-# PHP Stream Protocol
+# PHP Stream Protocol ▲
 
-A PHP library for handling AI streaming protocols, particularly the Vercel AI SDK Stream Protocol. This package provides an easy-to-use interface for creating streaming AI responses with support for tool calls, attachments, and various AI providers.
+A PHP library for handling the [Vercel AI SDK Stream Protocol](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol#data-stream-protocol). This package provides an easy-to-use interface for creating streaming AI responses with support for tool calls, attachments, and various AI providers.
 
 ## Features
 
@@ -80,33 +80,18 @@ class ChatController extends AbstractController
     #[Route('/api/chat', name: 'api_chat', methods: ['POST'])]
     public function chat(Request $request): Response
     {
-        $protocol = $request->query->get('protocol', 'data');
-
-        try {
-            // Use the StreamProtocol to handle the entire request in one line!
-            $response = $this->streamProtocol->handleRequest(
-                $request->getContent(),
-                function(array $openaiMessages) {
-                    $client = OpenAI::client($_ENV['OPENAI_API_KEY']);
-                    return $client->chat()->createStreamed([
-                        'model' => 'gpt-4',
-                        'messages' => $openaiMessages,
-                        'stream' => true,
-                        'tools' => [WeatherTool::getToolDefinition()],
-                    ]);
-                },
-                $protocol
-            );
-
-            // Disable web profiler for streaming responses
-            $response->headers->set('X-Debug-Token-Link', '');
-            $response->headers->set('X-Debug-Token', '');
-
-            return $response;
-
-        } catch (\Exception $e) {
-            return $this->json(['error' => $e->getMessage()], 500);
-        }
+        return $this->streamProtocol->handleRequest(
+            $request->getContent(),
+            function(array $openaiMessages) {
+                $client = OpenAI::client($_ENV['OPENAI_API_KEY']);
+                return $client->chat()->createStreamed([
+                    'model' => 'gpt-4',
+                    'messages' => $openaiMessages,
+                    'stream' => true,
+                    'tools' => [WeatherTool::getToolDefinition()],
+                ]);
+            },
+        );
     }
 
     #[Route('/chat', name: 'chat')]
