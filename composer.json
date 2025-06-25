@@ -27,7 +27,7 @@
   },
   "autoload": {
     "psr-4": {
-      "PremierOctet\\PhpStreamProtocol\\": "src/"
+      "PremierOctet\\PhpStreamProtocol\\": "src/PhpStreamProtocol/"
     }
   },
   "autoload-dev": {
