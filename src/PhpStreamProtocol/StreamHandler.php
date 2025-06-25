@@ -1,6 +1,6 @@
 <?php
 
-namespace PremierOctet\StreamProtocol;
+namespace PremierOctet\PhpStreamProtocol;
 
 use Symfony\Component\HttpFoundation\StreamedResponse;
 

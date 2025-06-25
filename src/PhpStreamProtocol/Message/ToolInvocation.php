@@ -1,6 +1,6 @@
 <?php
 
-namespace PremierOctet\StreamProtocol\Message;
+namespace PremierOctet\PhpStreamProtocol\Message;
 
 /**
  * ToolInvocation - Represents a tool call and its result

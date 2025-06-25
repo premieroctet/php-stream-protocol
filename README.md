@@ -22,7 +22,7 @@ composer require premieroctet/php-stream-protocol
 ### Basic Usage
 
 ```php
-use PremierOctet\StreamProtocol\StreamProtocol;
+use PremierOctet\PhpStreamProtocol\StreamProtocol;
 use OpenAI;
 
 // Create a new StreamProtocol instance
@@ -53,7 +53,7 @@ public function chat(Request $request): Response
 ### Advanced Usage with Custom Tools
 
 ```php
-use PremierOctet\StreamProtocol\StreamProtocol;
+use PremierOctet\PhpStreamProtocol\StreamProtocol;
 
 class ChatController
 {

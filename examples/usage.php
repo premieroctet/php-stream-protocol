@@ -9,9 +9,9 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use PremierOctet\StreamProtocol\StreamProtocol;
-use PremierOctet\StreamProtocol\Message\ClientMessage;
-use PremierOctet\StreamProtocol\MessageConverter;
+use PremierOctet\PhpStreamProtocol\StreamProtocol;
+use PremierOctet\PhpStreamProtocol\Message\ClientMessage;
+use PremierOctet\PhpStreamProtocol\MessageConverter;
 use Symfony\Component\HttpFoundation\Request;
 use OpenAI;
 

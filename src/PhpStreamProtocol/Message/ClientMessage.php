@@ -1,6 +1,6 @@
 <?php
 
-namespace PremierOctet\StreamProtocol\Message;
+namespace PremierOctet\PhpStreamProtocol\Message;
 
 /**
  * ClientMessage - Represents a message from the client

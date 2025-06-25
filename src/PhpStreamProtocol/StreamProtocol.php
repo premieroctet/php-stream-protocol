@@ -1,8 +1,8 @@
 <?php
 
-namespace PremierOctet\StreamProtocol;
+namespace PremierOctet\PhpStreamProtocol;
 
-use PremierOctet\StreamProtocol\Message\ClientMessage;
+use PremierOctet\PhpStreamProtocol\Message\ClientMessage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**

@@ -27,12 +27,12 @@
   },
   "autoload": {
     "psr-4": {
-      "PremierOctet\\StreamProtocol\\": "src/"
+      "PremierOctet\\PhpStreamProtocol\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "PremierOctet\\StreamProtocol\\Tests\\": "tests/"
+      "PremierOctet\\PhpStreamProtocol\\Tests\\": "tests/"
     }
   },
   "minimum-stability": "stable",
