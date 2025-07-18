@@ -2,6 +2,7 @@
 
 namespace PremierOctet\PhpStreamProtocol;
 
+use PremierOctet\PhpStreamProtocol\Tool\ToolInterface;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -29,15 +30,23 @@ class StreamHandler
 
     /**
      * Register a tool that can be called during streaming
+     * 
+     * @param ToolInterface $tool
+     * @return self
      */
-    public function registerTool(string $name, callable $callback): self
+    public function registerTool(ToolInterface $tool): self
     {
-        $this->availableTools[$name] = $callback;
+        $this->availableTools[$tool->getName()] = $tool->execute(...);
         return $this;
     }
 
     /**
      * Create a streaming response
+     * 
+     * @param iterable $stream
+     * @param string $protocol
+     * @param array $additionalHeaders
+     * @return StreamedResponse
      */
     public function createStreamingResponse(
         iterable $stream,
@@ -64,6 +73,10 @@ class StreamHandler
 
     /**
      * Handle the actual streaming process
+     * 
+     * @param iterable $stream
+     * @param string $protocol
+     * @return void
      */
     private function handleStream(iterable $stream, string $protocol): void
     {
@@ -98,6 +111,8 @@ class StreamHandler
 
     /**
      * Disable all potential interference from Symfony components
+     * 
+     * @return void
      */
     private function disableAllInterference(): void
     {
@@ -133,6 +148,9 @@ class StreamHandler
 
     /**
      * Emit message start
+     * 
+     * @param string $messageId
+     * @return void
      */
     private function emitMessageStart(string $messageId): void
     {
@@ -141,6 +159,12 @@ class StreamHandler
 
     /**
      * Process individual chunk
+     * 
+     * @param array $chunk
+     * @param string $protocol
+     * @param array &$draftToolCalls
+     * @param int &$draftToolCallsIndex
+     * @return void
      */
     private function processChunk(
         array $chunk, 
@@ -172,6 +196,9 @@ class StreamHandler
 
     /**
      * Handle completed tool calls
+     * 
+     * @param array $draftToolCalls
+     * @return void
      */
     private function handleToolCalls(array $draftToolCalls): void
     {
@@ -186,7 +213,7 @@ class StreamHandler
             // Execute tool and emit result
             if (isset($this->availableTools[$toolCall['name']])) {
                 $args = json_decode($toolCall['arguments'], true);
-                $result = call_user_func_array($this->availableTools[$toolCall['name']], $args);
+                $result = $this->availableTools[$toolCall['name']]($args);
 
                 $this->emit('a', [
                     'toolCallId' => $toolCall['id'],
@@ -198,6 +225,11 @@ class StreamHandler
 
     /**
      * Handle streaming tool calls
+     * 
+     * @param array $toolCalls
+     * @param array &$draftToolCalls
+     * @param int &$draftToolCallsIndex
+     * @return void
      */
     private function handleToolCallStreaming(
         array $toolCalls, 
@@ -238,6 +270,10 @@ class StreamHandler
 
     /**
      * Emit finish events
+     * 
+     * @param array|null $lastChunk
+     * @param array $draftToolCalls
+     * @return void
      */
     private function emitFinish(?array $lastChunk, array $draftToolCalls): void
     {
@@ -283,6 +319,10 @@ class StreamHandler
 
     /**
      * Emit a protocol message
+     * 
+     * @param string $type
+     * @param mixed $data
+     * @return void
      */
     private function emit(string $type, $data): void
     {
@@ -292,6 +332,10 @@ class StreamHandler
 
     /**
      * Create a simple text streaming response
+     * 
+     * @param string $text
+     * @param int $delay
+     * @return StreamedResponse
      */
     public function createTextStream(string $text, int $delay = 50): StreamedResponse
     {
@@ -303,6 +347,10 @@ class StreamHandler
 
     /**
      * Generate text chunks for simple streaming
+     * 
+     * @param string $text
+     * @param int $delay
+     * @return \Generator
      */
     private function generateTextChunks(string $text, int $delay): \Generator
     {

@@ -3,6 +3,8 @@
 namespace PremierOctet\PhpStreamProtocol;
 
 use PremierOctet\PhpStreamProtocol\Message\ClientMessage;
+use PremierOctet\PhpStreamProtocol\Tool\ToolInterface;
+use PremierOctet\PhpStreamProtocol\Tool\Tool;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -28,6 +30,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class StreamProtocol
 {
     private StreamHandler $streamHandler;
+
+    /**
+     * @var ToolInterface[]
+     */
     private array $tools = [];
     private string $defaultSystemPrompt = '';
 
@@ -47,11 +53,13 @@ class StreamProtocol
 
     /**
      * Register a tool that can be called during streaming
+     * @param ToolInterface $tool
+     * @return self
      */
-    public function registerTool(string $name, callable $callback): self
+    public function registerTool(ToolInterface $tool): self
     {
-        $this->tools[$name] = $callback;
-        $this->streamHandler->registerTool($name, $callback);
+        $this->tools[$tool->getName()] = $tool;
+        $this->streamHandler->registerTool($tool);
         return $this;
     }
 
@@ -73,7 +81,7 @@ class StreamProtocol
     public function parseMessages(string $jsonData): array
     {
         $data = json_decode($jsonData, true);
-        
+
         if (!isset($data['messages']) || !is_array($data['messages'])) {
             throw new \InvalidArgumentException('Invalid message format: missing messages array');
         }
@@ -98,29 +106,14 @@ class StreamProtocol
         return MessageConverter::convertToOpenAIMessages($messages);
     }
 
-    /**
-     * Convert messages to Anthropic format
-     * 
-     * @param ClientMessage[] $messages
-     * @return array
-     */
-    public function convertToAnthropic(array $messages, ?string $systemPrompt = null): array
-    {
-        // Add system prompt if provided or if default is set
-        $systemPrompt = $systemPrompt ?? $this->defaultSystemPrompt;
-        if (!empty($systemPrompt)) {
-            $messages = MessageConverter::addSystemPrompt($messages, $systemPrompt);
-        }
 
-        return MessageConverter::convertToAnthropicMessages($messages);
-    }
 
     /**
      * Create streaming response from an AI stream
      */
     public function stream(
-        iterable $stream, 
-        string $protocol = 'data', 
+        iterable $stream,
+        string $protocol = 'data',
         array $additionalHeaders = []
     ): StreamedResponse {
         return $this->streamHandler->createStreamingResponse($stream, $protocol, $additionalHeaders);
@@ -151,19 +144,21 @@ class StreamProtocol
     ): StreamedResponse {
         // Parse messages
         $messages = $this->parseMessages($jsonData);
-        
+
         // Convert to OpenAI format with system prompt
         $openaiMessages = $this->convertToOpenAI($messages, $systemPrompt);
-        
+
         // Get stream from provider
         $stream = $streamProvider($openaiMessages);
-        
+
         // Return streaming response
         return $this->stream($stream, $protocol);
     }
 
     /**
      * Get available tools
+     * 
+     * @return ToolInterface[]
      */
     public function getTools(): array
     {
@@ -172,32 +167,38 @@ class StreamProtocol
 
     /**
      * Get tool definitions in OpenAI format
+     * 
+     * @return array<array{type: string, function: array{name: string, description: string, parameters: array, strict: bool}}>
      */
     public function getToolDefinitions(): array
     {
         $definitions = [];
-        
-        foreach ($this->tools as $name => $callback) {
-            // Try to get definition from callback if it's a class method
-            if (is_array($callback) && method_exists($callback[0], 'getToolDefinition')) {
-                $definitions[] = call_user_func([$callback[0], 'getToolDefinition']);
-            } else {
-                // Default definition structure
-                $definitions[] = [
-                    'type' => 'function',
-                    'function' => [
-                        'name' => $name,
-                        'description' => "Tool: {$name}",
-                        'parameters' => [
-                            'type' => 'object',
-                            'properties' => [],
-                            'required' => []
-                        ]
-                    ]
-                ];
+
+        foreach ($this->tools as $tool) {
+
+            $parameters = $tool->getParameters();
+
+            $parameters ??= [
+                'type' => 'object',
+                'properties' => json_decode('{}'),
+            ];
+
+            if ($tool->isStrict()) {
+                $parameters['additionalProperties'] = false;
             }
+
+            $parameters['required'] = is_array($parameters['properties']) ? array_keys($parameters['properties']) : [];
+
+            $definitions[] = [
+                'type' => 'function',
+                'function' => [
+                    'name' => $tool->getName(),
+                    'description' => $tool->getDescription(),
+                    'parameters' => $parameters,
+                    'strict' => $tool->isStrict(),
+                ]
+            ];
         }
-        
         return $definitions;
     }
 
@@ -211,7 +212,7 @@ class StreamProtocol
         array $additionalOptions = []
     ): array {
         $openaiMessages = $this->convertToOpenAI($messages, $systemPrompt);
-        
+
         $request = array_merge([
             'model' => $model,
             'messages' => $openaiMessages,
@@ -226,4 +227,4 @@ class StreamProtocol
 
         return $request;
     }
-} 
+}

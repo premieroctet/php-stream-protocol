@@ -7,7 +7,7 @@ A PHP library for handling the [Vercel AI SDK Stream Protocol](https://ai-sdk.de
 - 🚀 **Easy Integration**: Simple, fluent API for streaming responses
 - 🔧 **Tool Support**: Built-in tool calling and execution
 - 📎 **Attachments**: Handle file and image attachments
-- 🔄 **Multi-Provider**: Support for OpenAI, Anthropic Claude, and more
+- 🔄 **Multi-Provider**: Support for OpenAI and other providers
 - 📊 **Protocol Compliant**: Follows Vercel AI SDK Stream Protocol specifications
 - ⚡ **Symfony Integration**: Built with Symfony components
 
@@ -154,9 +154,6 @@ $messages = $protocol->parseMessages($jsonData);
 
 // For OpenAI
 $openaiMessages = $protocol->convertToOpenAI($messages);
-
-// For Anthropic Claude
-$anthropicData = $protocol->convertToAnthropic($messages);
 ```
 
 ### Simple Text Streaming (for testing)

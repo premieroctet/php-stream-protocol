@@ -8,7 +8,7 @@ use PremierOctet\PhpStreamProtocol\Message\ClientMessage;
  * MessageConverter - Converts messages between different formats
  * 
  * This class handles the conversion between client messages and various 
- * AI provider message formats (OpenAI, Anthropic, etc.)
+ * AI provider message formats (OpenAI, etc.)
  */
 class MessageConverter
 {
@@ -25,7 +25,7 @@ class MessageConverter
         foreach ($messages as $message) {
             $content = '';
             $hasParts = isset($message->parts) && is_array($message->parts);
-            
+
             // Extract content from parts or use direct content
             if ($hasParts) {
                 foreach ($message->parts as $part) {
@@ -67,7 +67,7 @@ class MessageConverter
                         ],
                     ];
                 }
-                
+
                 // Add assistant message with tool calls
                 $openaiMessages[] = [
                     'role' => 'assistant',
@@ -105,7 +105,7 @@ class MessageConverter
                 $openaiMessages[] = $messageData;
             }
         }
-        
+
         return $openaiMessages;
     }
 
@@ -118,11 +118,11 @@ class MessageConverter
     public static function convertToClientMessages(array $messagesData): array
     {
         $messages = [];
-        
+
         foreach ($messagesData as $messageData) {
             $messages[] = ClientMessage::fromArray($messageData);
         }
-        
+
         return $messages;
     }
 
@@ -134,69 +134,4 @@ class MessageConverter
         $systemMessage = new ClientMessage('system', $systemPrompt);
         return array_merge([$systemMessage], $messages);
     }
-
-    /**
-     * Convert to Anthropic Claude format
-     * 
-     * @param ClientMessage[] $messages
-     * @return array
-     */
-    public static function convertToAnthropicMessages(array $messages): array
-    {
-        $anthropicMessages = [];
-        $systemPrompt = '';
-
-        foreach ($messages as $message) {
-            // Extract system messages separately for Anthropic
-            if ($message->role === 'system') {
-                $systemPrompt .= $message->content . "\n";
-                continue;
-            }
-
-            $content = $message->content;
-            
-            // Handle parts
-            if (isset($message->parts) && is_array($message->parts)) {
-                $content = [];
-                foreach ($message->parts as $part) {
-                    if ($part['type'] === 'text') {
-                        $content[] = [
-                            'type' => 'text',
-                            'text' => $part['text']
-                        ];
-                    }
-                }
-            }
-
-            // Handle attachments
-            if (!empty($message->experimental_attachments)) {
-                if (is_string($content)) {
-                    $content = [['type' => 'text', 'text' => $content]];
-                }
-                
-                foreach ($message->experimental_attachments as $attachment) {
-                    if ($attachment->isImage()) {
-                        $content[] = [
-                            'type' => 'image',
-                            'source' => [
-                                'type' => 'base64',
-                                'media_type' => $attachment->contentType,
-                                'data' => base64_encode(file_get_contents($attachment->url))
-                            ]
-                        ];
-                    }
-                }
-            }
-
-            $anthropicMessages[] = [
-                'role' => $message->role === 'assistant' ? 'assistant' : 'user',
-                'content' => $content
-            ];
-        }
-
-        return [
-            'system' => trim($systemPrompt),
-            'messages' => $anthropicMessages
-        ];
-    }
-} 
+}
