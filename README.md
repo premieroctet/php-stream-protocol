@@ -74,7 +74,7 @@ class ChatController extends AbstractController
     {
         $this->streamProtocol = StreamProtocol::create()
             ->withSystemPrompt('You are a demo assistant showcasing the integration of Vercel AI SDK with a Symfony controller.')
-            ->registerTool('get_current_weather', [WeatherTool::class, 'getCurrentWeather']);
+            ->registerTool(new WeatherTool());
     }
 
     #[Route('/api/chat', name: 'api_chat', methods: ['POST'])]
@@ -228,37 +228,44 @@ The library implements the Vercel AI SDK Stream Protocol with the following mess
 Tools must follow this interface:
 
 ```php
-class WeatherTool
+class WeatherTool implements ToolInterface
 {
-    public static function getCurrentWeather(string $location): array
+    public function getName(): string
     {
-        // Your implementation
+        return 'get_current_weather';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Get current weather for a location';
+    }
+
+    public function execute(array $parameters): mixed
+    {
         return [
-            'location' => $location,
+            'location' => $parameters['location'],
             'temperature' => '25°C',
             'condition' => 'sunny'
         ];
     }
 
-    public static function getToolDefinition(): array
+    public function getParameters(): array
     {
         return [
-            'type' => 'function',
-            'function' => [
-                'name' => 'get_current_weather',
-                'description' => 'Get current weather for a location',
-                'parameters' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'location' => [
-                            'type' => 'string',
-                            'description' => 'The city and state, e.g. San Francisco, CA'
-                        ]
-                    ],
-                    'required' => ['location']
+            'type' => 'object',
+            'properties' => [
+                'location' => [
+                    'type' => 'string',
+                    'description' => 'The city and state, e.g. San Francisco, CA'
                 ]
-            ]
+            ],
+            'required' => ['location']
         ];
+    }
+
+    public function isStrict(): bool
+    {
+        return true;
     }
 }
 ```
