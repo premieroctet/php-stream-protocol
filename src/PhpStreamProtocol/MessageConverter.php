@@ -31,6 +31,15 @@ class MessageConverter
                 foreach ($message->parts as $part) {
                     if ($part['type'] === 'text') {
                         $content .= $part['text'];
+                    } elseif ($part['type'] === 'file') {
+                        $parts[] = [
+                            'type' => 'text',
+                            'text' => json_encode([
+                                'filename' => $part['data'],
+                                'contentType' => $part['mimeType'],
+                                'name' => $part['name'],
+                            ]),
+                        ];
                     }
                 }
             } else {
