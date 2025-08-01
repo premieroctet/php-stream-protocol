@@ -23,42 +23,54 @@ class MessageConverter
         $openaiMessages = [];
 
         foreach ($messages as $message) {
-            $content = '';
-            $hasParts = isset($message->parts) && is_array($message->parts);
+            $messageData = [];
+            $messageData['role'] = $message->role;
+            $messageData['content'] = [];
 
-            // Extract content from parts or use direct content
-            if ($hasParts) {
+            if ($message->content && $message->content !== '') {
+                $messageData['content'][] = [
+                    'type' => 'text',
+                    'text' => $message->content,
+                ];
+            }
+
+            if ($message->parts && is_array($message->parts)) {
                 foreach ($message->parts as $part) {
                     if ($part['type'] === 'text') {
-                        $content .= $part['text'];
-                    } elseif ($part['type'] === 'file') {
-                        $parts[] = [
+                        $messageData['content'][] = [
                             'type' => 'text',
-                            'text' => json_encode([
-                                'filename' => $part['data'],
-                                'contentType' => $part['mimeType'],
+                            'text' => $part['text'],
+                        ];
+                    } elseif ($part['type'] === 'file') {
+                        $messageData['content'][] = [
+                            'type' => 'text',
+                            'text' => json_encode(['file' => [
                                 'name' => $part['name'],
-                            ]),
+                                'mime_type' => $part['mimeType'],
+                                'url' => $part['data'],
+                            ]]),
                         ];
                     }
                 }
-            } else {
-                $content = $message->content;
             }
 
-            // Handle attachments
-            $parts = [];
             if (!empty($message->experimental_attachments)) {
                 foreach ($message->experimental_attachments as $attachment) {
                     if ($attachment->isImage()) {
-                        $parts[] = [
+                        $messageData['content'][] = [
                             'type' => 'image_url',
                             'image_url' => [
                                 'url' => $attachment->url,
                             ],
                         ];
                     } elseif ($attachment->isText()) {
-                        $content .= "\n" . $attachment->url;
+                        $messageData['content'][] = [
+                            'type' => 'file',
+                            'file' => [
+                                'file_data' => $attachment->url,
+                                'filename' => $attachment->url,
+                            ],
+                        ];
                     }
                 }
             }
@@ -93,26 +105,9 @@ class MessageConverter
                         ];
                     }
                 }
-                continue;
             }
 
-            // Add regular message
-            if (!empty($content)) {
-                $messageData = [
-                    'role' => $message->role,
-                    'content' => $content,
-                ];
-
-                // Add image parts if any
-                if (!empty($parts)) {
-                    $messageData['content'] = [
-                        ['type' => 'text', 'text' => $content],
-                        ...$parts
-                    ];
-                }
-
-                $openaiMessages[] = $messageData;
-            }
+            $openaiMessages[] = $messageData;
         }
 
         return $openaiMessages;
