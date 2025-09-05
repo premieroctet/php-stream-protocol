@@ -27,13 +27,6 @@ class MessageConverter
             $messageData['role'] = $message->role;
             $messageData['content'] = [];
 
-            if ($message->content && $message->content !== '') {
-                $messageData['content'][] = [
-                    'type' => 'text',
-                    'text' => $message->content,
-                ];
-            }
-
             if ($message->parts && is_array($message->parts)) {
                 foreach ($message->parts as $part) {
                     if ($part['type'] === 'text') {
